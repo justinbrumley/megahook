@@ -36,10 +36,10 @@ func main() {
 	}
 
 	header := &http.Header{}
-	header.Add("Origin", "http://localhost")
-	conn, _, err := dialer.Dial("ws://localhost:8080/ws", *header)
+	header.Add("Origin", "http://67.207.81.146/")
+	conn, resp, err := dialer.Dial("ws://67.207.81.146/ws", *header)
 	if err != nil {
-		fmt.Printf("Error connecting to server: %v\n", err)
+		fmt.Printf("Error connecting to server: %v\n%v\n", err, resp)
 		return
 	}
 
@@ -85,7 +85,10 @@ func main() {
 			d := json.NewDecoder(r)
 			req := &Request{}
 			d.Decode(req)
-			fmt.Printf("\nGot request: %v\n", *req)
+
+			// Print the request out here so it's more
+			// obvious to the user that something happened.
+			fmt.Printf("\n%v\n", *req)
 
 			client := &http.Client{}
 			request, err := http.NewRequest(req.Method, local, bytes.NewBuffer([]byte(req.Body)))
