@@ -1,11 +1,19 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"net/http"
 	"os"
 )
+
+type Request struct {
+	Method  string              `json:"method,omitempty"`
+	Headers map[string][]string `json:"headers,omitempty"`
+	Body    string              `json:"body,omitempty"`
+}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -73,7 +81,30 @@ func main() {
 		}
 
 		if messageType == websocket.TextMessage {
-			fmt.Printf("Received message from server: \n%v\n", string(message))
+			r := bytes.NewBuffer(message)
+			d := json.NewDecoder(r)
+			req := &Request{}
+			d.Decode(req)
+			fmt.Printf("\nGot request: %v\n", *req)
+
+			client := &http.Client{}
+			request, err := http.NewRequest(req.Method, local, bytes.NewBuffer([]byte(req.Body)))
+			if err != nil {
+				fmt.Printf("Error creating new request: %v\n", err)
+				continue
+			}
+
+			for key, headers := range req.Headers {
+				for _, value := range headers {
+					request.Header.Add(key, value)
+				}
+			}
+
+			_, err = client.Do(request)
+			if err != nil {
+				fmt.Printf("Error doing request: %v\n", err)
+				continue
+			}
 		}
 	}
 }
