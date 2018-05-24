@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 )
@@ -14,6 +15,7 @@ type Request struct {
 	Method  string              `json:"method,omitempty"`
 	Headers map[string][]string `json:"headers,omitempty"`
 	Body    string              `json:"body,omitempty"`
+	Query   url.Values          `json:"query,omitempty"`
 }
 
 const megaman = `
@@ -31,9 +33,9 @@ const megaman = `
 `
 
 const (
-	// megahookDomain = "megahook.in"
-	megahookDomain = "localhost:8080"
-	writeTimeout   = time.Second * 30
+	megahookDomain = "megahook.in"
+	// megahookDomain = "localhost:8080"
+	writeTimeout = time.Second * 30
 )
 
 var (
@@ -121,12 +123,12 @@ func main() {
 			}
 		}
 
-		resp, err = client.Do(request)
+		request.URL.RawQuery = req.Query.Encode()
+
+		_, err = client.Do(request)
 		if err != nil {
 			fmt.Printf("Error doing request: %v\n", err)
 			continue
 		}
-
-		conn.WriteJSON(resp)
 	}
 }
