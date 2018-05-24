@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/websocket"
 	"net/http"
 	"os"
+	"time"
 )
 
 type Request struct {
@@ -14,6 +15,31 @@ type Request struct {
 	Headers map[string][]string `json:"headers,omitempty"`
 	Body    string              `json:"body,omitempty"`
 }
+
+const megaman = `
+░░░░░░░░░░▄▄█▀▀▄░░░░
+░░░░░░░░▄█████▄▄█▄░░░░
+░░░░░▄▄▄▀██████▄▄██░░░░
+░░▄██░░█░█▀░░▄▄▀█░█░░░▄▄▄▄
+▄█████░░██░░░▀▀░▀░█▀▀██▀▀▀█▀▄
+█████░█░░▀█░▀▀▀▀▄▀░░░███████▀
+░▀▀█▄░██▄▄░▀▀▀▀█▀▀▀▀▀░▀▀▀▀
+░▄████████▀▀▀▄▀░░░░
+██████░▀▀█▄░░░█▄░░░░
+░▀▀▀▀█▄▄▀░██████▄░░░░
+░░░░░░░░░█████████░░░░
+`
+
+const (
+	// megahookDomain = "megahook.in"
+	megahookDomain = "localhost:8080"
+	writeTimeout   = time.Second * 30
+)
+
+var (
+	megahookURL       = "http://" + megahookDomain
+	megahookWebsocket = "ws://" + megahookDomain + "/ws"
+)
 
 func main() {
 	if len(os.Args) < 2 {
@@ -36,12 +62,13 @@ func main() {
 	}
 
 	header := &http.Header{}
-	header.Add("Origin", "http://67.207.81.146/")
-	conn, resp, err := dialer.Dial("ws://67.207.81.146/ws", *header)
+	header.Add("Origin", megahookURL)
+	conn, resp, err := dialer.Dial(megahookWebsocket, *header)
 	if err != nil {
 		fmt.Printf("Error connecting to server: %v\n%v\n", err, resp)
 		return
 	}
+	defer conn.Close()
 
 	// Write the chosen name to the server to get back a url to use as webhook
 	err = conn.WriteMessage(websocket.TextMessage, []byte(name))
@@ -57,22 +84,10 @@ func main() {
 		return
 	}
 
-	fmt.Printf(`
-░░░░░░░░░░▄▄█▀▀▄░░░░
-░░░░░░░░▄█████▄▄█▄░░░░
-░░░░░▄▄▄▀██████▄▄██░░░░
-░░▄██░░█░█▀░░▄▄▀█░█░░░▄▄▄▄
-▄█████░░██░░░▀▀░▀░█▀▀██▀▀▀█▀▄
-█████░█░░▀█░▀▀▀▀▄▀░░░███████▀
-░▀▀█▄░██▄▄░▀▀▀▀█▀▀▀▀▀░▀▀▀▀
-░▄████████▀▀▀▄▀░░░░
-██████░▀▀█▄░░░█▄░░░░
-░▀▀▀▀█▄▄▀░██████▄░░░░
-░░░░░░░░░█████████░░░░
-	`)
+	fmt.Println(megaman)
 	fmt.Printf("\nAll traffic from the following url: \n\n\t%v\n\nwill be forwarded to your local url:\n\n\t%v\n\n", string(message), local)
 
-	// Now we wait
+	// Start listening for requests
 	for {
 		messageType, message, err := conn.ReadMessage()
 		if err != nil {
@@ -80,34 +95,38 @@ func main() {
 			break
 		}
 
-		if messageType == websocket.TextMessage {
-			r := bytes.NewBuffer(message)
-			d := json.NewDecoder(r)
-			req := &Request{}
-			d.Decode(req)
+		if messageType != websocket.TextMessage {
+			continue
+		}
 
-			// Print the request out here so it's more
-			// obvious to the user that something happened.
-			fmt.Printf("\n%v\n", *req)
+		r := bytes.NewBuffer(message)
+		d := json.NewDecoder(r)
+		req := &Request{}
+		d.Decode(req)
 
-			client := &http.Client{}
-			request, err := http.NewRequest(req.Method, local, bytes.NewBuffer([]byte(req.Body)))
-			if err != nil {
-				fmt.Printf("Error creating new request: %v\n", err)
-				continue
-			}
+		// Print the request out here so it's more
+		// obvious to the user that something happened.
+		fmt.Printf("\n%v\n", *req)
 
-			for key, headers := range req.Headers {
-				for _, value := range headers {
-					request.Header.Add(key, value)
-				}
-			}
+		client := &http.Client{}
+		request, err := http.NewRequest(req.Method, local, bytes.NewBuffer([]byte(req.Body)))
+		if err != nil {
+			fmt.Printf("Error creating new request: %v\n", err)
+			continue
+		}
 
-			_, err = client.Do(request)
-			if err != nil {
-				fmt.Printf("Error doing request: %v\n", err)
-				continue
+		for key, headers := range req.Headers {
+			for _, value := range headers {
+				request.Header.Add(key, value)
 			}
 		}
+
+		resp, err = client.Do(request)
+		if err != nil {
+			fmt.Printf("Error doing request: %v\n", err)
+			continue
+		}
+
+		conn.WriteJSON(resp)
 	}
 }
