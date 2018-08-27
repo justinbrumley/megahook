@@ -108,7 +108,19 @@ func main() {
 
 		// Print the request out here so it's more
 		// obvious to the user that something happened.
-		fmt.Printf("\n%v\n", *req)
+		if val, ok := req.Headers["Content-Type"]; ok && val[0] == "application/json" {
+			o := make(map[string]interface{})
+			json.Unmarshal([]byte(req.Body), &o)
+			j, err := json.MarshalIndent(o, "", "  ")
+			if err != nil {
+				fmt.Printf("Error formatting JSON request: %v\n", err)
+				continue
+			}
+
+			fmt.Printf("\n%v\n", string(j))
+		} else {
+			fmt.Printf("\n%v\n", *req)
+		}
 
 		client := &http.Client{}
 		request, err := http.NewRequest(req.Method, local, bytes.NewBuffer([]byte(req.Body)))
