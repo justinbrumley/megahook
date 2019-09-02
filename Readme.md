@@ -9,7 +9,7 @@ go install github.com/justinbrumley/megahook
 ```
 And to connect to the server and start passing traffic around:
 ```
-megahook http://localhost:8080 my-first-hook
+megahook --name my-little-webhook http://localhost:8080
 ```
 You should be given a URL you can start using for your webhooks. If the name you chose
 is already taken, you will be given a randomly generated one.
