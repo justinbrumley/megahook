@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -16,6 +18,11 @@ type Request struct {
 	Headers map[string][]string `json:"headers,omitempty"`
 	Body    string              `json:"body,omitempty"`
 	Query   url.Values          `json:"query,omitempty"`
+}
+
+type Response struct {
+	Headers map[string][]string `json:"headers,omitempty"`
+	Body    string              `json:"body,omitempty"`
 }
 
 const megaman = `
@@ -137,9 +144,38 @@ func main() {
 
 		request.URL.RawQuery = req.Query.Encode()
 
-		_, err = client.Do(request)
+		response, err := client.Do(request)
 		if err != nil {
 			fmt.Printf("Error doing request: %v\n", err)
+			continue
+		}
+
+		reader := bufio.NewReader(response.Body)
+		body := ""
+
+		for {
+			s, err := reader.ReadString('\n')
+			if err != nil {
+				if err == io.EOF {
+					body += s
+					break
+				}
+
+				fmt.Printf("Error reading from body: %v\n", err)
+				break
+			}
+
+			body += s
+		}
+
+		// Send response back to server so it can reach the originator
+		res := &Response{
+			Headers: map[string][]string(response.Header),
+			Body:    body,
+		}
+
+		if err = conn.WriteJSON(res); err != nil {
+			fmt.Printf("Error sending response to server: %v\n", err)
 			continue
 		}
 	}
