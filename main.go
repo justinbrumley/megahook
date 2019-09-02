@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"io"
 	"net/http"
 	"net/url"
-	"os"
+	"strings"
 	"time"
 )
 
@@ -43,6 +44,9 @@ const (
 	megahookDomain = "megahook.in"
 	// megahookDomain = "localhost:8080"
 	writeTimeout = time.Second * 30
+
+	// TODO: Move somewhere else
+	version = "0.0.2"
 )
 
 var (
@@ -50,17 +54,71 @@ var (
 	megahookWebsocket = "ws://" + megahookDomain + "/ws"
 )
 
+var showHelp bool
+var name string
+var showVersion bool
+
+const helpUsage = "Megahook help"
+const nameUsage = "Name to use for megahook URL"
+const versionUsage = "Megahook version"
+
+func parseFlags() {
+	flag.BoolVar(&showHelp, "help", false, helpUsage)
+	flag.BoolVar(&showHelp, "h", false, helpUsage+" (shorthand)")
+
+	flag.BoolVar(&showVersion, "version", false, versionUsage)
+	flag.BoolVar(&showVersion, "v", false, versionUsage+" (shorthand)")
+
+	flag.StringVar(&name, "name", "", nameUsage)
+	flag.StringVar(&name, "n", "", nameUsage+" (shorthand)")
+
+	flag.Parse()
+}
+
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("Missing local webhook url.\n\nmegahook <local_webhook_url> [name]")
+	parseFlags()
+
+	if showVersion {
+		fmt.Printf("%v\n", version)
 		return
 	}
 
-	local := os.Args[1]
-	name := ""
+	if showHelp {
+		fmt.Printf(strings.TrimSpace(`
+Name
 
-	if len(os.Args) > 2 {
-		name = os.Args[2]
+	megahook - Util for forwarding webhooks to your local environment
+
+Usage
+
+	megahook [options] <webhook_url> [name]
+
+Options/Flags
+
+	-h --help
+		What you are seeing now
+
+	-v --version
+		Version of megahook client
+
+	-n --name
+		Name to use for the Megahook URL. If taken or not provided, a random uuid v4 will be used.
+		`) + "\n")
+
+		return
+	}
+
+	args := flag.Args()
+
+	if len(args) == 0 {
+		fmt.Println("Missing local webhook url.")
+		return
+	}
+
+	local := args[0]
+
+	if name == "" && len(args) > 1 {
+		name = args[1]
 	}
 
 	fmt.Printf("Connecting to server with local url %v and name %v\n", local, name)
