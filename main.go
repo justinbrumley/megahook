@@ -83,6 +83,12 @@ func main() {
 		return
 	}
 
+	args := flag.Args()
+
+	if len(args) == 0 {
+		showHelp = true
+	}
+
 	if showHelp {
 		fmt.Printf(strings.TrimSpace(`
 Name
@@ -105,13 +111,6 @@ Options/Flags
 		Name to use for the Megahook URL. If taken or not provided, a random uuid v4 will be used.
 		`) + "\n")
 
-		return
-	}
-
-	args := flag.Args()
-
-	if len(args) == 0 {
-		fmt.Println("Missing local webhook url.")
 		return
 	}
 
