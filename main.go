@@ -204,6 +204,16 @@ Options/Flags
 		response, err := client.Do(request)
 		if err != nil {
 			fmt.Printf("Error doing request: %v\n", err)
+
+			// Send response back to server so it can reach the originator
+			res := &Response{
+				Body: "",
+			}
+
+			if err = conn.WriteJSON(res); err != nil {
+				fmt.Printf("Error sending response to server: %v\n", err)
+			}
+
 			continue
 		}
 
