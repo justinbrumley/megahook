@@ -15,15 +15,17 @@ import (
 )
 
 type Request struct {
-	Method  string              `json:"method,omitempty"`
-	Headers map[string][]string `json:"headers,omitempty"`
-	Body    string              `json:"body,omitempty"`
-	Query   url.Values          `json:"query,omitempty"`
+	Method     string              `json:"method,omitempty"`
+	Headers    map[string][]string `json:"headers,omitempty"`
+	Body       string              `json:"body,omitempty"`
+	Query      url.Values          `json:"query,omitempty"`
+	StatusCode int                 `json:"status_code,omitempty"`
 }
 
 type Response struct {
-	Headers map[string][]string `json:"headers,omitempty"`
-	Body    string              `json:"body,omitempty"`
+	Headers    map[string][]string `json:"headers,omitempty"`
+	Body       string              `json:"body,omitempty"`
+	StatusCode int                 `json:"status_code,omitempty"`
 }
 
 const megaman = `
@@ -46,7 +48,7 @@ const (
 	writeTimeout = time.Second * 30
 
 	// TODO: Move somewhere else
-	version = "0.0.2"
+	version = "0.0.3"
 )
 
 var (
@@ -207,7 +209,8 @@ Options/Flags
 
 			// Send response back to server so it can reach the originator
 			res := &Response{
-				Body: "",
+				Body:       "",
+				StatusCode: response.StatusCode,
 			}
 
 			if err = conn.WriteJSON(res); err != nil {
@@ -237,8 +240,9 @@ Options/Flags
 
 		// Send response back to server so it can reach the originator
 		res := &Response{
-			Headers: map[string][]string(response.Header),
-			Body:    body,
+			Headers:    map[string][]string(response.Header),
+			Body:       body,
+			StatusCode: response.StatusCode,
 		}
 
 		if err = conn.WriteJSON(res); err != nil {
