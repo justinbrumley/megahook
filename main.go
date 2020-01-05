@@ -48,7 +48,7 @@ const (
 	writeTimeout = time.Second * 30
 
 	// TODO: Move somewhere else
-	version = "0.0.3"
+	version = "0.0.4"
 )
 
 var (
@@ -122,7 +122,7 @@ Options/Flags
 		name = args[1]
 	}
 
-	fmt.Printf("Connecting to server with local url %v and name %v\n", local, name)
+	fmt.Println("Establishing connection...")
 
 	dialer := &websocket.Dialer{
 		ReadBufferSize:  1024,
@@ -152,8 +152,13 @@ Options/Flags
 		return
 	}
 
+	fmt.Println("Connected!")
+
 	fmt.Println(megaman)
-	fmt.Printf("\nAll traffic from the following url: \n\n\t%v\n\nwill be forwarded to your local url:\n\n\t%v\n\n", string(message), local)
+
+	fmt.Printf("Public URL: %v\n", string(message))
+	fmt.Printf("Local URL: %v\n\n", local)
+	fmt.Printf("GUI URL: https://megahook.in/i/%v\n", string(message[22:]))
 
 	// Start listening for requests
 	for {
