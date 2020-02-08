@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 )
@@ -43,17 +44,8 @@ const megaman = `
 `
 
 const (
-	megahookDomain = "megahook.in"
-	// megahookDomain = "localhost:8080"
 	writeTimeout = time.Second * 30
-
-	// TODO: Move somewhere else
-	version = "0.0.4"
-)
-
-var (
-	megahookURL       = "http://" + megahookDomain
-	megahookWebsocket = "ws://" + megahookDomain + "/ws"
+	version      = "0.1.0"
 )
 
 var showHelp bool
@@ -122,7 +114,17 @@ Options/Flags
 		name = args[1]
 	}
 
-	fmt.Println("Establishing connection...")
+	apiHost := os.Getenv("API_HOST")
+	if apiHost == "" {
+		apiHost = "api.megahook.in"
+	}
+
+	var (
+		apiUrl       = "http://" + apiHost
+		websocketUrl = "ws://" + apiHost + "/ws"
+	)
+
+	fmt.Print("Establishing connection... ")
 
 	dialer := &websocket.Dialer{
 		ReadBufferSize:  1024,
@@ -130,8 +132,8 @@ Options/Flags
 	}
 
 	header := &http.Header{}
-	header.Add("Origin", megahookURL)
-	conn, resp, err := dialer.Dial(megahookWebsocket, *header)
+	header.Add("Origin", apiUrl)
+	conn, resp, err := dialer.Dial(websocketUrl, *header)
 	if err != nil {
 		fmt.Printf("Error connecting to server: %v\n%v\n", err, resp)
 		return
@@ -156,9 +158,9 @@ Options/Flags
 
 	fmt.Println(megaman)
 
-	fmt.Printf("Public URL: %v\n", string(message))
-	fmt.Printf("Local URL: %v\n\n", local)
-	fmt.Printf("GUI URL: https://megahook.in/i/%v\n", string(message[22:]))
+	id := string(message[22:])
+	fmt.Printf("Webhook URL: %v/m/%v\n", apiUrl, id)
+	fmt.Printf("Destination: %v\n\n", local)
 
 	// Start listening for requests
 	for {
