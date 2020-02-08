@@ -124,7 +124,7 @@ Options/Flags
 		websocketUrl = "ws://" + apiHost + "/ws"
 	)
 
-	fmt.Print("Establishing connection... ")
+	fmt.Printf("Establishing connection to %v... ", websocketUrl)
 
 	dialer := &websocket.Dialer{
 		ReadBufferSize:  1024,
