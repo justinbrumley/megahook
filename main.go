@@ -29,6 +29,27 @@ type Response struct {
 	StatusCode int                 `json:"status_code,omitempty"`
 }
 
+type ClientOptions struct {
+	Name  string `json:"name"`
+	Token string `json:"token"`
+	Track bool   `json:"track"`
+}
+
+type RegisterPayload struct {
+	Namespace string `json:"namespace"`
+}
+
+type TokenNamespace struct {
+	Token     string `json:"token"`
+	Namespace string `json:"namespace"`
+}
+
+type RegisterResponse struct {
+	Success        bool            `json:"success"`
+	Error          string          `json:"error,omitempty"`
+	TokenNamespace *TokenNamespace `json:"data,omitempty"`
+}
+
 const megaman = `
 ░░░░░░░░░░▄▄█▀▀▄░░░░
 ░░░░░░░░▄█████▄▄█▄░░░░
@@ -46,6 +67,7 @@ const megaman = `
 const (
 	writeTimeout = time.Second * 30
 	version      = "0.1.0"
+	protocol     = "http://"
 )
 
 var showHelp bool
@@ -67,6 +89,38 @@ func parseFlags() {
 	flag.StringVar(&name, "n", "", nameUsage+" (shorthand)")
 
 	flag.Parse()
+}
+
+func handleRegister(apiHost string, name string) {
+	if name == "" {
+		fmt.Println("Missing namespace")
+		return
+	}
+
+	opts, err := json.Marshal(&RegisterPayload{name})
+	if err != nil {
+		return
+	}
+
+	r, err := http.Post(protocol+apiHost+"/register", "application/json", bytes.NewReader(opts))
+	if err != nil {
+		fmt.Printf("Error registering namespace: %v\n%v\n", name, err)
+		return
+	}
+	defer r.Body.Close()
+
+	resp := &RegisterResponse{}
+	decoder := json.NewDecoder(r.Body)
+	decoder.Decode(&resp)
+
+	if resp.Success == false {
+		fmt.Printf("Error registering: %v\n", resp.Error)
+		return
+	}
+
+	fmt.Println("Register Successful!\n")
+	fmt.Printf("\tToken: %v\n\tNamespace: %v\n\n", resp.TokenNamespace.Token, resp.TokenNamespace.Namespace)
+	fmt.Printf("To use your namespace, set MEGAHOOK_API_TOKEN=%v in your env\n", resp.TokenNamespace.Token)
 }
 
 func main() {
@@ -92,6 +146,7 @@ Name
 Usage
 
 	megahook [options] <webhook_url> [name]
+	megahook register <namespace>
 
 Options/Flags
 
@@ -119,8 +174,13 @@ Options/Flags
 		apiHost = "api.megahook.in"
 	}
 
+	if local == "register" {
+		handleRegister(apiHost, name)
+		return
+	}
+
 	var (
-		apiUrl       = "http://" + apiHost
+		apiUrl       = protocol + apiHost
 		websocketUrl = "ws://" + apiHost + "/ws"
 	)
 
@@ -140,8 +200,11 @@ Options/Flags
 	}
 	defer conn.Close()
 
-	// Write the chosen name to the server to get back a url to use as webhook
-	err = conn.WriteMessage(websocket.TextMessage, []byte(name))
+	err = conn.WriteJSON(&ClientOptions{
+		Name:  name,
+		Token: os.Getenv("MEGAHOOK_API_TOKEN"),
+	})
+
 	if err != nil {
 		fmt.Printf("Error sending message to server: %v\n", err)
 		return
@@ -155,11 +218,8 @@ Options/Flags
 	}
 
 	fmt.Println("Connected!")
-
 	fmt.Println(megaman)
-
-	id := string(message[22:])
-	fmt.Printf("Webhook URL: %v/m/%v\n", apiUrl, id)
+	fmt.Printf("Webhook URL: %v\n", string(message))
 	fmt.Printf("Destination: %v\n\n", local)
 
 	// Start listening for requests
