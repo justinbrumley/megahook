@@ -67,7 +67,7 @@ const megaman = `
 const (
 	writeTimeout = time.Second * 30
 	version      = "0.1.0"
-	protocol     = "http://"
+	protocol     = "https://"
 )
 
 var showHelp bool
