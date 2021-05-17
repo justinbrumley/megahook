@@ -22,7 +22,7 @@ megahook http://localhost:8080/my/favorite/webhook my-little-webhook
 
 **Using Docker**
 
-https://hub.docker.com/repository/docker/justinbrumley/megahook/general
+[https://hub.docker.com/repository/docker/justinbrumley/megahook](https://hub.docker.com/repository/docker/justinbrumley/megahook)
 
 ```bash
 docker run -d \
