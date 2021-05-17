@@ -1,5 +1,3 @@
-Test webhooks on localhost
-
 ### How it works
 
 Megahook's API receives traffic from your webhook and forwards the request to the client running on your machine. The client will then forward the http request to your local env, get a response back, then send that response back through the API to the original source.
