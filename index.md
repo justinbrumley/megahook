@@ -26,7 +26,8 @@ https://hub.docker.com/repository/docker/justinbrumley/megahook/general
 
 ```bash
 docker run -d \
-  -e WEBHOOK_URL=http://localhost:8080/my/favorite/webhook -e WEBHOOK_NAME=my-little-webhook \
+  -e WEBHOOK_URL=http://localhost:8080/my/favorite/webhook \
+  -e WEBHOOK_NAME=my-little-webhook \
   --network host \
   justinbrumley/megahook:latest 
 ```
@@ -42,7 +43,8 @@ megahook register <subdomain>
 If successful, this command will return your API token for using the subdomain. Then you can export the api key when using megahook to route webhooks to your custom subdomain:
 
 ```bash
-MEGAHOOK_API_TOKEN=b85df400e0d5ef78ea0707cc megahook http://localhost:8080/my/favorite/webhook my-little-webhook 
+export MEGAHOOK_API_TOKEN=b85df400e0d5ef78ea0707cc
+megahook http://localhost:8080/my/favorite/webhook my-little-webhook 
 ```
 
 (this example will forward traffic through https://test-subdomain-1234.api.megahook.in/m/my-little-webhook)
