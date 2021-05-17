@@ -1,5 +1,3 @@
-## Megahook
-
 Test webhooks on localhost
 
 ### How it works
