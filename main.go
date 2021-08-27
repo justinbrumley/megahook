@@ -6,13 +6,14 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/gorilla/websocket"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 type Request struct {
@@ -73,10 +74,12 @@ const (
 var showHelp bool
 var name string
 var showVersion bool
+var serve bool
 
 const helpUsage = "Megahook help"
 const nameUsage = "Name to use for megahook URL"
 const versionUsage = "Megahook version"
+const serveUsage = "Return 200 OK for all requests instead of forwarding"
 
 func parseFlags() {
 	flag.BoolVar(&showHelp, "help", false, helpUsage)
@@ -87,6 +90,9 @@ func parseFlags() {
 
 	flag.StringVar(&name, "name", "", nameUsage)
 	flag.StringVar(&name, "n", "", nameUsage+" (shorthand)")
+
+	flag.BoolVar(&serve, "serve", false, serveUsage)
+	flag.BoolVar(&serve, "s", false, serveUsage+" (shorthand)")
 
 	flag.Parse()
 }
@@ -158,6 +164,9 @@ Options/Flags
 
 	-n --name
 		Name to use for the Megahook URL. If taken or not provided, a random uuid v4 will be used.
+
+	-s --serve
+		Ignore webhook_url and return 200 OK for all requests
 		`) + "\n")
 
 		return
@@ -253,6 +262,20 @@ Options/Flags
 			fmt.Printf("\n%v\n", string(j))
 		} else {
 			fmt.Printf("\n%v\n", *req)
+		}
+
+		if serve {
+			// Send 200 OK back to originator and continue loop
+			res := &Response{
+				Body:       "",
+				StatusCode: http.StatusOK,
+			}
+
+			if err = conn.WriteJSON(res); err != nil {
+				fmt.Printf("Error sending response to server: %v\n", err)
+			}
+
+			continue
 		}
 
 		client := &http.Client{}
