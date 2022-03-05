@@ -259,9 +259,9 @@ Options/Flags
 				continue
 			}
 
-			fmt.Printf("\n%v\n", string(j))
+			fmt.Printf("\n%v\n\n", string(j))
 		} else {
-			fmt.Printf("\n%v\n", *req)
+			fmt.Printf("\n%v\n\n", *req)
 		}
 
 		if serve {
@@ -300,7 +300,11 @@ Options/Flags
 			// Send response back to server so it can reach the originator
 			res := &Response{
 				Body:       "",
-				StatusCode: response.StatusCode,
+				StatusCode: http.StatusTeapot,
+			}
+
+			if response != nil {
+				res.StatusCode = response.StatusCode
 			}
 
 			if err = conn.WriteJSON(res); err != nil {
