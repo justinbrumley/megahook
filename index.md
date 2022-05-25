@@ -13,8 +13,7 @@ Megahook's API receives traffic from your webhook and forwards the request to th
 
 ```bash
 # Installing
-go get github.com/justinbrumley/megahook
-go install github.com/justinbrumley/megahook
+go install github.com/justinbrumley/megahook@latest
 
 # Running Local Forward
 megahook http://localhost:8080/my/favorite/webhook my-little-webhook
