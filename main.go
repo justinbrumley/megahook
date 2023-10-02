@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -278,7 +279,17 @@ Options/Flags
 			continue
 		}
 
-		client := &http.Client{}
+		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
+		// Ignore cert issues since this SHOULD be a trusted source for the dev
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+
+		client := &http.Client{
+			Transport: tr,
+		}
+
 		request, err := http.NewRequest(req.Method, local, bytes.NewBuffer([]byte(req.Body)))
 		if err != nil {
 			fmt.Printf("Error creating new request: %v\n", err)
